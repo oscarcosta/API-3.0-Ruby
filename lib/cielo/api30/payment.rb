@@ -71,7 +71,8 @@ module Cielo
         payment.authenticate = data["Authenticate"]
         payment.recurrent = data["Recurrent"]
         payment.recurrent_payment = RecurrentPayment.from_json(data["RecurrentPayment"])
-        payment.credit_card = CreditCard.from_json(data["CreditCard"])
+        payment.credit_card = CreditCard.from_json(
+          (data["Type"] == PAYMENTTYPE_DEBITCARD) ? data["DebitCard"] : data["CreditCard"])
         payment.proof_of_sale = data["ProofOfSale"]
         payment.authorization_code = data["AuthorizationCode"]
         payment.soft_descriptor = data["SoftDescriptor"]
@@ -107,7 +108,7 @@ module Cielo
         Status.success?(status)
       end
 
-      def as_json(options={})
+      def as_json_base(options={})
         {
           ServiceTaxAmount: @service_tax_amount,
           Installments: @installments,
@@ -130,6 +131,12 @@ module Cielo
           Address: @address,
           ReturnInfo: @return_info
         }
+      end
+
+      def as_json(options = {})
+        hash = as_json_base(options)
+        hash[:DebitCard] = hash.delete(:CreditCard) if @type == PAYMENTTYPE_DEBITCARD
+        hash
       end
     end
   end
